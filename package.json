@@ -7,7 +7,7 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
-  "license": "ISC",
+  "license": "BSD3",
   "dependencies": {
     "elm": "^0.17.0"
   }
