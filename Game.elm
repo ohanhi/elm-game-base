@@ -2,10 +2,9 @@ module Game exposing (..)
 
 import Html exposing (Html, text)
 import Html.App as Html
-import Keyboard exposing (KeyCode)
+import Keyboard.Extra as Keyboard
 import AnimationFrame
 import Time exposing (Time)
-import Key exposing (..)
 
 
 main =
@@ -24,21 +23,24 @@ main =
 type alias Model =
     { velocity : Float
     , position : Float
-    , shotsFired : Int
-    }
-
-
-model : Model
-model =
-    { velocity = 0
-    , position = 0
-    , shotsFired = 0
+    , shooting : Bool
+    , keyModel : Keyboard.Model
     }
 
 
 init : ( Model, Cmd Msg )
 init =
-    ( model, Cmd.none )
+    let
+        ( keyModel, keyCmd ) =
+            Keyboard.init
+    in
+        ( { velocity = 0
+          , position = 0
+          , shooting = False
+          , keyModel = keyModel
+          }
+        , Cmd.map KeyMsg keyCmd
+        )
 
 
 
@@ -47,50 +49,44 @@ init =
 
 type Msg
     = TimeUpdate Time
-    | KeyDown KeyCode
-    | KeyUp KeyCode
+    | KeyMsg Keyboard.Msg
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         TimeUpdate dt ->
-            ( applyPhysics dt model, Cmd.none )
+            updateModel dt model
 
-        KeyDown keyCode ->
-            ( keyDown keyCode model, Cmd.none )
-
-        KeyUp keyCode ->
-            ( keyUp keyCode model, Cmd.none )
+        KeyMsg keyMsg ->
+            updateKeyModel keyMsg model
 
 
-keyDown : KeyCode -> Model -> Model
-keyDown keyCode model =
-    case Key.fromCode keyCode of
-        Space ->
-            incrementShotsFired model
+updateModel : Time -> Model -> ( Model, Cmd Msg )
+updateModel dt model =
+    let
+        arrows =
+            Keyboard.arrows model.keyModel
 
-        ArrowLeft ->
-            updateVelocity -1.0 model
-
-        ArrowRight ->
-            updateVelocity 1.0 model
-
-        _ ->
+        newModel =
             model
+                |> updateShooting
+                |> updateVelocity (toFloat arrows.x)
+                |> applyPhysics dt
+    in
+        ( newModel, Cmd.none )
 
 
-keyUp : KeyCode -> Model -> Model
-keyUp keyCode model =
-    case Key.fromCode keyCode of
-        ArrowLeft ->
-            updateVelocity 0 model
+updateKeyModel : Keyboard.Msg -> Model -> ( Model, Cmd Msg )
+updateKeyModel keyMsg model =
+    let
+        ( keyModel, keyCmd ) =
+            Keyboard.update keyMsg model.keyModel
 
-        ArrowRight ->
-            updateVelocity 0 model
-
-        _ ->
-            model
+        newModel =
+            { model | keyModel = keyModel }
+    in
+        ( newModel, Cmd.map KeyMsg keyCmd )
 
 
 applyPhysics : Float -> Model -> Model
@@ -103,9 +99,9 @@ updateVelocity newVelocity model =
     { model | velocity = newVelocity }
 
 
-incrementShotsFired : Model -> Model
-incrementShotsFired model =
-    { model | shotsFired = model.shotsFired + 1 }
+updateShooting : Model -> Model
+updateShooting model =
+    { model | shooting = Keyboard.isPressed Keyboard.Space model.keyModel }
 
 
 
@@ -125,6 +121,5 @@ subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
         [ AnimationFrame.diffs TimeUpdate
-        , Keyboard.downs KeyDown
-        , Keyboard.ups KeyUp
+        , Sub.map KeyMsg Keyboard.subscriptions
         ]
