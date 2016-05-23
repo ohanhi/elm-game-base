@@ -1,8 +1,8 @@
 module Game exposing (..)
 
-import Html exposing (Html, text)
+import Html exposing (Html, div, p, text)
 import Html.App as Html
-import Keyboard.Extra as Keyboard
+import Keyboard.Extra as Keyboard exposing (isPressed, Key(..))
 import AnimationFrame
 import Time exposing (Time)
 
@@ -23,7 +23,7 @@ main =
 type alias Model =
     { velocity : Float
     , position : Float
-    , shooting : Bool
+    , shotsFired : Int
     , keyModel : Keyboard.Model
     }
 
@@ -36,7 +36,7 @@ init =
     in
         ( { velocity = 0
           , position = 0
-          , shooting = False
+          , shotsFired = 0
           , keyModel = keyModel
           }
         , Cmd.map KeyMsg keyCmd
@@ -59,7 +59,7 @@ update msg model =
             updateModel dt model
 
         KeyMsg keyMsg ->
-            updateKeyModel keyMsg model
+            updateKeys keyMsg model
 
 
 updateModel : Time -> Model -> ( Model, Cmd Msg )
@@ -70,23 +70,30 @@ updateModel dt model =
 
         newModel =
             model
-                |> updateShooting
                 |> updateVelocity (toFloat arrows.x)
                 |> applyPhysics dt
     in
         ( newModel, Cmd.none )
 
 
-updateKeyModel : Keyboard.Msg -> Model -> ( Model, Cmd Msg )
-updateKeyModel keyMsg model =
+updateKeys : Keyboard.Msg -> Model -> ( Model, Cmd Msg )
+updateKeys keyMsg model =
     let
-        ( keyModel, keyCmd ) =
+        ( newKeyModel, keyCmd ) =
             Keyboard.update keyMsg model.keyModel
 
-        newModel =
-            { model | keyModel = keyModel }
+        shotsFired =
+            if not (isPressed Space model.keyModel) && isPressed Space newKeyModel then
+                model.shotsFired + 1
+            else
+                model.shotsFired
     in
-        ( newModel, Cmd.map KeyMsg keyCmd )
+        ( { model
+            | keyModel = newKeyModel
+            , shotsFired = shotsFired
+          }
+        , Cmd.map KeyMsg keyCmd
+        )
 
 
 applyPhysics : Float -> Model -> Model
@@ -99,9 +106,9 @@ updateVelocity newVelocity model =
     { model | velocity = newVelocity }
 
 
-updateShooting : Model -> Model
-updateShooting model =
-    { model | shooting = Keyboard.isPressed Keyboard.Space model.keyModel }
+incrementShotsFired : Model -> Model
+incrementShotsFired model =
+    { model | shotsFired = model.shotsFired + 1 }
 
 
 
@@ -110,7 +117,11 @@ updateShooting model =
 
 view : Model -> Html msg
 view model =
-    text (toString model)
+    div []
+        [ p [] [ text ("Velocity: " ++ toString model.velocity) ]
+        , p [] [ text ("Position: " ++ toString model.position) ]
+        , p [] [ text ("Shots fired: " ++ toString model.shotsFired) ]
+        ]
 
 
 
