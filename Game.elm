@@ -1,13 +1,13 @@
 module Game exposing (..)
 
 import Html exposing (Html, text)
-import Html.App as Html
 import Keyboard exposing (KeyCode)
 import AnimationFrame
 import Time exposing (Time)
 import Key exposing (..)
 
 
+main : Program Never Model Msg
 main =
     Html.program
         { init = init
