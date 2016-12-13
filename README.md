@@ -1,6 +1,6 @@
 # Elm game base
 
-Example base for a game in Elm 0.17.
+Example base for a game in Elm 0.18.
 
 This codebase is made for [an article](http://ohanhi.github.io/base-for-game-elm-017.html). The main file here is [Game.elm](Game.elm).
 
