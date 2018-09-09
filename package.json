@@ -1,5 +1,5 @@
 {
-  "name": "018-game",
+  "name": "019-game",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -8,7 +8,7 @@
   },
   "author": "",
   "license": "BSD3",
-  "dependencies": {
-    "elm": "^0.18.0"
+  "devDependencies": {
+    "elm": "^0.19.0"
   }
 }
