@@ -1,15 +1,16 @@
-module Game exposing (..)
+module Game exposing (Model, Msg(..), applyPhysics, incrementShotsFired, init, initModel, keyDown, keyUp, main, subscriptions, update, updateVelocity, view)
 
+import Browser
+import Browser.Events as Events
+import Debug
 import Html exposing (Html, text)
-import Keyboard exposing (KeyCode)
-import AnimationFrame
-import Time exposing (Time)
 import Key exposing (..)
+import Json.Decode as Decode
 
 
-main : Program Never Model Msg
+main : Program () Model Msg
 main =
-    Html.program
+    Browser.element
         { init = init
         , view = view
         , update = update
@@ -28,17 +29,17 @@ type alias Model =
     }
 
 
-model : Model
-model =
+initModel : Model
+initModel =
     { velocity = 0
     , position = 0
     , shotsFired = 0
     }
 
 
-init : ( Model, Cmd Msg )
-init =
-    ( model, Cmd.none )
+init : () -> ( Model, Cmd Msg )
+init () =
+    ( initModel, Cmd.none )
 
 
 
@@ -46,9 +47,9 @@ init =
 
 
 type Msg
-    = TimeUpdate Time
-    | KeyDown KeyCode
-    | KeyUp KeyCode
+    = TimeUpdate Float
+    | KeyDown Key
+    | KeyUp Key
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -57,16 +58,16 @@ update msg model =
         TimeUpdate dt ->
             ( applyPhysics dt model, Cmd.none )
 
-        KeyDown keyCode ->
-            ( keyDown keyCode model, Cmd.none )
+        KeyDown key ->
+            ( keyDown key model, Cmd.none )
 
-        KeyUp keyCode ->
-            ( keyUp keyCode model, Cmd.none )
+        KeyUp key ->
+            ( keyUp key model, Cmd.none )
 
 
-keyDown : KeyCode -> Model -> Model
-keyDown keyCode model =
-    case Key.fromCode keyCode of
+keyDown : Key -> Model -> Model
+keyDown key model =
+    case key of
         Space ->
             incrementShotsFired model
 
@@ -80,9 +81,9 @@ keyDown keyCode model =
             model
 
 
-keyUp : KeyCode -> Model -> Model
-keyUp keyCode model =
-    case Key.fromCode keyCode of
+keyUp : Key -> Model -> Model
+keyUp key model =
+    case key of
         ArrowLeft ->
             updateVelocity 0 model
 
@@ -114,7 +115,7 @@ incrementShotsFired model =
 
 view : Model -> Html msg
 view model =
-    text (toString model)
+    text (Debug.toString model)
 
 
 
@@ -124,7 +125,12 @@ view model =
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
-        [ AnimationFrame.diffs TimeUpdate
-        , Keyboard.downs KeyDown
-        , Keyboard.ups KeyUp
+        [ Events.onAnimationFrameDelta TimeUpdate
+        , Events.onKeyDown (Decode.map KeyDown keyDecoder)
+        , Events.onKeyUp (Decode.map KeyUp keyDecoder)
         ]
+
+
+keyDecoder : Decode.Decoder Key
+keyDecoder =
+    Decode.map fromCode (Decode.field "key" Decode.string)

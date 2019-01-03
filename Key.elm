@@ -8,16 +8,16 @@ type Key
     | Unknown
 
 
-fromCode : Int -> Key
+fromCode : String -> Key
 fromCode keyCode =
     case keyCode of
-        32 ->
+        " " ->
             Space
 
-        37 ->
+        "ArrowLeft" ->
             ArrowLeft
 
-        39 ->
+        "ArrowRight" ->
             ArrowRight
 
         _ ->
